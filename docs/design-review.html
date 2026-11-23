@@ -1,0 +1,815 @@
+<title>Ringback Design Review</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+<style>
+/* Layout: one reading column of review sections; screen mockups sit in framed canvases that scroll sideways on phones. Single dark look by design (the product is dark-only). */
+:root {
+  color-scheme: dark;
+  --ground: #0B0D10; --sidebar: #0F1216; --surface: #13161B; --raised: #1A1E25;
+  --line: #272C35; --edge: #4A5261;
+  --text: #F2F4F7; --text-2: #C3CAD6; --muted: #9AA3B2;
+  --accent: #C8F53C; --on-accent: #0B0D10;
+  --em-fg: #FFA070; --em-bg: #3A1D10;
+  --bk-fg: #8CCBFF; --bk-bg: #12283A;
+  --nw-fg: #C8F53C; --nw-bg: #2A3312;
+  --vm-fg: #C3CAD6; --vm-bg: #22262E;
+  --display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --body: "Inter", "Segoe UI", system-ui, sans-serif;
+  --mono: ui-monospace, "Cascadia Code", Consolas, monospace;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--ground);
+  background-image: radial-gradient(circle at 1px 1px, rgba(242,244,247,.06) 1px, transparent 0);
+  background-size: 22px 22px;
+  color: var(--text); font: 16px/1.5 var(--body);
+}
+.wrap { max-width: 1180px; margin: 0 auto; padding-block: 40px 96px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: clamp(2rem, 5vw, 3.25rem); line-height: 1.05; }
+h2 { font-size: 1.6rem; }
+h3 { font-size: 1.05rem; }
+p { margin: 0; }
+.lede { color: var(--text-2); max-width: 62ch; }
+.muted { color: var(--muted); }
+section { display: grid; gap: 20px; padding-top: 56px; }
+.sec-head { display: grid; gap: 6px; }
+.sec-head p { color: var(--muted); max-width: 70ch; }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+
+/* top */
+.top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; }
+.mark { display: flex; align-items: center; gap: 10px; font-family: var(--display); font-weight: 700; font-size: 1.15rem; }
+.mark svg { width: 28px; height: 28px; }
+.status { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border: 1px solid var(--edge); border-radius: 999px; color: var(--text-2); font-size: .875rem; }
+.status i { width: 8px; height: 8px; border-radius: 50%; background: var(--em-fg); }
+.hero-intro { display: grid; gap: 16px; padding-top: 48px; }
+.facts { display: flex; flex-wrap: wrap; gap: 8px; }
+.fact { font-size: .8125rem; color: var(--text-2); background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; }
+.fact b { color: var(--text); font-weight: 600; }
+
+/* screen frames */
+.frame { border: 1px solid var(--line); border-radius: 16px; background: var(--sidebar); overflow: hidden; }
+.frame-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--line); font-size: .8125rem; color: var(--muted); }
+.frame-bar b { color: var(--text-2); font-weight: 500; }
+.scroller { overflow-x: auto; }
+.canvas { min-width: 980px; font-size: 13px; }
+.notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px 24px; padding: 16px; border-top: 1px solid var(--line); color: var(--text-2); font-size: .875rem; }
+.notes li { margin-left: 18px; }
+.notes ul { margin: 0; padding: 0; display: grid; gap: 6px; }
+
+/* product atoms */
+.pill { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+.p-em { color: var(--em-fg); background: var(--em-bg); }
+.p-bk { color: var(--bk-fg); background: var(--bk-bg); }
+.p-nw { color: var(--nw-fg); background: var(--nw-bg); }
+.p-vm { color: var(--vm-fg); background: var(--vm-bg); }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 36px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--edge); background: var(--raised); color: var(--text); font: 500 12.5px var(--body); cursor: pointer; white-space: nowrap; }
+.btn.primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); font-weight: 600; }
+.btn svg { width: 14px; height: 14px; }
+.num { font-family: var(--display); font-variant-numeric: tabular-nums; }
+
+/* app shell mock */
+.app { display: grid; grid-template-columns: 200px 1fr; min-height: 560px; background: var(--ground); }
+.side { background: var(--sidebar); border-right: 1px solid var(--line); padding: 16px 12px; display: flex; flex-direction: column; gap: 4px; }
+.side .mark { font-size: 15px; padding: 4px 8px 16px; }
+.side .mark svg { width: 22px; height: 22px; }
+.nav { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 10px; color: var(--text-2); }
+.nav svg { width: 16px; height: 16px; }
+.nav.on { background: var(--raised); color: var(--text); box-shadow: inset 2px 0 0 var(--accent); }
+.nav .count { margin-left: auto; background: var(--accent); color: var(--on-accent); font-size: 11px; font-weight: 700; border-radius: 999px; padding: 0 7px; }
+.fwd { margin-top: auto; border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 12px; display: grid; gap: 4px; }
+.fwd b { display: flex; align-items: center; gap: 6px; font-size: 12.5px; }
+.fwd b i { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+.fwd span { color: var(--muted); font-size: 11.5px; }
+.main { display: grid; grid-template-rows: auto 1fr; min-width: 0; }
+.apphead { display: flex; align-items: center; gap: 16px; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+.apphead h3 { font-size: 16px; }
+.demo { font-size: 10.5px; color: var(--muted); border: 1px dashed var(--edge); border-radius: 6px; padding: 1px 6px; }
+.stats { display: flex; gap: 20px; margin-left: auto; }
+.stat { display: grid; }
+.stat span { color: var(--muted); font-size: 11px; }
+.stat b { font-family: var(--display); font-size: 17px; font-variant-numeric: tabular-nums; }
+
+/* inbox */
+.inbox { display: grid; grid-template-columns: 270px 1fr 240px; min-height: 0; }
+.list { border-right: 1px solid var(--line); background: var(--surface); }
+.tabs { display: flex; gap: 4px; padding: 10px; border-bottom: 1px solid var(--line); }
+.tab { padding: 6px 10px; border-radius: 8px; color: var(--muted); font-size: 12px; }
+.tab.on { background: var(--raised); color: var(--text); }
+.row { display: grid; gap: 3px; padding: 11px 12px; border-bottom: 1px solid var(--line); }
+.row.on { background: var(--raised); box-shadow: inset 2px 0 0 var(--accent); }
+.row .r1 { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.row .r1 b { font-weight: 600; display: flex; align-items: center; gap: 6px; }
+.row .r1 b i { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+.row p { color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.thread { display: grid; grid-template-rows: auto 1fr auto; min-width: 0; }
+.thead { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+.thead .grow { flex: 1; }
+.msgs { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.msg { max-width: 76%; display: grid; gap: 3px; }
+.msg small { font-size: 10.5px; color: var(--muted); }
+.msg div { padding: 8px 11px; border-radius: 12px; line-height: 1.4; }
+.msg.in div { background: var(--raised); border: 1px solid var(--line); border-bottom-left-radius: 4px; }
+.msg.out { align-self: flex-end; text-align: left; }
+.msg.out small { text-align: right; }
+.msg.out div { background: #1C2A12; border: 1px solid #34461A; border-bottom-right-radius: 4px; }
+.msg.owner div { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.paused { display: flex; align-items: center; gap: 8px; align-self: center; font-size: 11px; color: var(--text-2); border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; }
+.compose { border-top: 1px solid var(--line); padding: 10px 14px; display: grid; gap: 8px; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip { font-size: 11.5px; padding: 5px 10px; border-radius: 999px; border: 1px solid var(--edge); color: var(--text-2); }
+.box { display: flex; gap: 8px; align-items: flex-end; }
+.box div { flex: 1; min-height: 40px; border: 1px solid var(--edge); border-radius: 10px; padding: 9px 11px; background: var(--raised); }
+.details { border-left: 1px solid var(--line); padding: 14px; display: grid; align-content: start; gap: 12px; background: var(--surface); }
+.dl { display: grid; gap: 2px; }
+.dl span { color: var(--muted); font-size: 11px; }
+.actions { display: grid; gap: 8px; padding-top: 4px; }
+.actions .btn { width: 100%; min-height: 40px; }
+
+/* phones */
+.phones { display: flex; flex-wrap: wrap; gap: 24px; padding: 20px; justify-content: center; background: var(--ground); }
+.phone { width: 260px; height: 520px; border: 1px solid var(--edge); border-radius: 30px; background: var(--ground); display: grid; grid-template-rows: auto 1fr auto; overflow: hidden; font-size: 12px; }
+.phone-cap { text-align: center; color: var(--muted); font-size: 12px; margin-top: 8px; }
+.ph-head { padding: 14px 14px 10px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 8px; }
+.ph-head h3 { font-size: 14px; }
+.ph-body { overflow: hidden; display: flex; flex-direction: column; }
+.ph-body .msgs { padding: 10px; gap: 8px; }
+.ph-body .msg { max-width: 86%; }
+.tabbar { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--line); background: var(--sidebar); }
+.tabbar span { display: grid; justify-items: center; gap: 2px; padding: 8px 0 12px; font-size: 10px; color: var(--muted); position: relative; }
+.tabbar span svg { width: 18px; height: 18px; }
+.tabbar span.on { color: var(--accent); }
+.tabbar sup { position: absolute; top: 4px; left: calc(50% + 6px); background: var(--accent); color: var(--on-accent); font-size: 9px; font-weight: 700; border-radius: 999px; padding: 0 5px; }
+.back { color: var(--text-2); display: inline-flex; }
+.back svg { width: 18px; height: 18px; }
+.em-banner { margin: 10px 10px 0; border-radius: 10px; background: var(--em-bg); color: var(--em-fg); padding: 8px 10px; font-size: 11.5px; display: flex; gap: 6px; }
+.em-banner svg { width: 14px; height: 14px; flex: none; margin-top: 2px; }
+
+/* landing mock */
+.land { background: var(--ground); background-image: radial-gradient(circle at 1px 1px, rgba(242,244,247,.07) 1px, transparent 0); background-size: 22px 22px; padding: 18px 40px 40px; }
+.lnav { display: flex; align-items: center; gap: 24px; color: var(--text-2); font-size: 13px; }
+.lnav .mark { font-size: 15px; color: var(--text); margin-right: auto; }
+.lnav .mark svg { width: 22px; height: 22px; }
+.lhero { display: grid; grid-template-columns: 1.15fr .85fr; gap: 40px; align-items: center; padding-top: 48px; }
+.lhero h2 { font-size: 50px; line-height: 1.02; letter-spacing: -0.025em; }
+.lhero .aud { color: var(--text-2); font-size: 17px; margin-top: 18px; }
+.lhero .ctas { display: flex; gap: 10px; margin-top: 26px; }
+.lhero .ctas .btn { min-height: 46px; padding: 0 18px; font-size: 14px; }
+.lhero .small { margin-top: 14px; color: var(--muted); font-size: 12.5px; }
+.demo-phone { justify-self: center; width: 280px; border: 1px solid var(--edge); border-radius: 32px; background: var(--surface); padding: 14px 12px 16px; display: grid; gap: 10px; }
+.demo-phone .who { text-align: center; font-size: 11.5px; color: var(--muted); }
+.demo-phone .who b { display: block; color: var(--text); font-size: 13px; }
+.dp-msgs { display: flex; flex-direction: column; gap: 7px; height: 300px; justify-content: flex-end; overflow: hidden; font-size: 11.5px; }
+.dp-msgs .msg { max-width: 84%; }
+.dp-msgs .msg div { padding: 7px 10px; }
+.typing { display: inline-flex; gap: 4px; padding: 10px 12px !important; }
+.typing i { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); animation: blink 1s infinite; }
+.typing i:nth-child(2) { animation-delay: .15s; } .typing i:nth-child(3) { animation-delay: .3s; }
+@keyframes blink { 0%, 60%, 100% { opacity: .3; } 30% { opacity: 1; } }
+.booked-card { border: 1px solid #2E4A63; background: var(--bk-bg); border-radius: 12px; padding: 10px 12px; display: grid; gap: 2px; font-size: 11.5px; color: var(--text-2); }
+.booked-card b { color: var(--bk-fg); display: flex; align-items: center; gap: 6px; font-size: 12.5px; }
+.booked-card b svg { width: 14px; height: 14px; }
+.replay { justify-self: center; }
+.pop { animation: pop .22s ease-out; }
+@keyframes pop { from { opacity: 0; transform: translateY(6px); } }
+
+/* calendar mock */
+.cal { padding: 16px; background: var(--ground); display: grid; gap: 12px; }
+.cal-top { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.cal-top .open-count { margin-left: auto; font-size: 13px; color: var(--text-2); }
+.cal-top .open-count b { color: var(--accent); font-family: var(--display); font-size: 18px; }
+.grid { display: grid; grid-template-columns: 70px repeat(5, 1fr); gap: 6px; }
+.grid .h { color: var(--muted); font-size: 11.5px; padding: 4px 6px; }
+.grid .h b { color: var(--text); display: block; font-size: 13px; }
+.grid .h.today b { color: var(--accent); }
+.slot { min-height: 64px; border-radius: 10px; padding: 8px; display: grid; align-content: start; gap: 2px; font-size: 11.5px; border: 1px solid var(--line); }
+.s-ai { background: var(--bk-bg); border-color: #2E4A63; color: var(--bk-fg); }
+.s-ai span, .s-own span { color: var(--text-2); }
+.s-own { background: var(--raised); border-color: var(--edge); }
+.s-open { border: 1px dashed var(--accent); color: var(--nw-fg); background: rgba(200,245,60,.04); }
+.s-closed { background: repeating-linear-gradient(135deg, var(--surface) 0 6px, var(--raised) 6px 12px); color: var(--muted); }
+.s-past { background: var(--sidebar); color: #6B7383; border-color: var(--sidebar); }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 11.5px; color: var(--text-2); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 14px; height: 14px; border-radius: 4px; display: inline-block; }
+
+/* report mock */
+.rep { padding: 18px; background: var(--ground); display: grid; grid-template-columns: 1.1fr 1fr; gap: 14px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px; display: grid; gap: 12px; align-content: start; }
+.big { font-family: var(--display); font-size: 54px; line-height: 1; font-variant-numeric: tabular-nums; }
+.big-label { color: var(--text-2); font-size: 13px; }
+.kpis { display: flex; gap: 22px; }
+.seg { display: inline-flex; border: 1px solid var(--edge); border-radius: 10px; padding: 2px; }
+.seg button { font: 500 12px var(--body); color: var(--muted); background: none; border: 0; border-radius: 8px; padding: 6px 10px; cursor: pointer; min-height: 30px; }
+.seg button[aria-pressed="true"] { background: var(--raised); color: var(--text); }
+.funnel { display: grid; gap: 8px; }
+.fstep { display: grid; grid-template-columns: 110px 1fr 74px; align-items: center; gap: 10px; font-size: 12px; }
+.fstep .track { height: 18px; background: var(--raised); border-radius: 4px; overflow: hidden; }
+.fstep .bar { height: 100%; background: var(--accent); border-radius: 0 4px 4px 0; }
+.fstep .v { text-align: right; font-variant-numeric: tabular-nums; color: var(--text-2); }
+.fstep .v b { color: var(--text); font-family: var(--display); }
+.days { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; align-items: end; height: 150px; border-bottom: 1px solid var(--edge); padding: 0 6px; }
+.day { display: grid; justify-items: center; align-content: end; gap: 4px; height: 100%; font-size: 11.5px; }
+.day .col { width: 60%; max-width: 38px; background: var(--accent); border-radius: 4px 4px 0 0; transition: height .2s ease-out; }
+.day .val { font-family: var(--display); font-variant-numeric: tabular-nums; }
+.day .up { color: var(--muted); font-size: 10.5px; border: 1px dashed var(--edge); border-radius: 6px; padding: 2px 6px; margin-bottom: 6px; }
+.daylabels { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; padding: 0 6px; font-size: 11.5px; color: var(--muted); text-align: center; }
+.won { display: grid; gap: 6px; font-size: 12.5px; }
+.won div { display: flex; justify-content: space-between; gap: 8px; }
+.won .tot { border-top: 1px solid var(--line); padding-top: 8px; font-weight: 600; }
+
+/* settings mock */
+.set { padding: 18px; background: var(--ground); display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.sw { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 12.5px; }
+.sw:last-child { border-bottom: 0; }
+.toggle { width: 38px; height: 22px; border-radius: 999px; background: var(--accent); position: relative; flex: none; }
+.toggle::after { content: ""; position: absolute; top: 3px; right: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--on-accent); }
+.toggle.off { background: var(--raised); border: 1px solid var(--edge); }
+.toggle.off::after { left: 3px; right: auto; top: 2px; background: var(--muted); }
+.preview { background: var(--raised); border-radius: 12px; border: 1px solid var(--line); padding: 10px 12px; font-size: 12.5px; color: var(--text-2); }
+.savebar { grid-column: 1 / -1; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 12px 16px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); font-size: 12.5px; }
+.savebar .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--em-fg); }
+.savebar .gap { flex: 1; }
+
+/* tokens */
+.swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
+.sw-card { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--surface); }
+.sw-chip { height: 64px; display: flex; align-items: flex-end; padding: 8px 10px; font-weight: 600; font-size: 13px; }
+.sw-meta { padding: 8px 10px; display: grid; gap: 2px; font-size: 12px; color: var(--muted); }
+.sw-meta b { color: var(--text); font-weight: 600; font-size: 13px; }
+.sw-meta code { font-family: var(--mono); font-size: 11.5px; color: var(--text-2); }
+.ratio { font-variant-numeric: tabular-nums; }
+.typespec { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+.typespec .card { padding: 20px; }
+.ts-big { font-family: var(--display); font-size: 44px; line-height: 1; font-weight: 600; letter-spacing: -0.02em; }
+.ts-body { font-size: 15px; color: var(--text-2); }
+
+/* plan */
+.plan { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 14px; }
+.plan .card { min-width: 0; }
+pre { margin: 0; font: 12.5px/1.55 var(--mono); color: var(--text-2); overflow-x: auto; }
+ol.steps { margin: 0; padding-left: 20px; display: grid; gap: 8px; color: var(--text-2); }
+ol.steps b { color: var(--text); font-weight: 600; }
+
+/* decisions */
+.decisions { display: grid; gap: 10px; }
+.dec { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px; display: grid; grid-template-columns: 1fr auto; gap: 10px 20px; align-items: start; }
+.dec.ok { border-color: #4B6118; }
+.dec.chg { border-color: #6A3A20; }
+.dec h3 { display: flex; gap: 10px; align-items: baseline; }
+.dec h3 span { font-family: var(--display); color: var(--muted); font-variant-numeric: tabular-nums; font-size: .95rem; }
+.dec p { color: var(--text-2); font-size: .9375rem; max-width: 68ch; grid-column: 1; }
+.dec .alt { color: var(--muted); font-size: .875rem; }
+.choice { display: inline-flex; border: 1px solid var(--edge); border-radius: 12px; padding: 3px; gap: 3px; grid-row: 1 / span 2; grid-column: 2; }
+.choice button { min-height: 40px; min-width: 88px; padding: 0 14px; border: 0; border-radius: 9px; background: none; color: var(--text-2); font: 500 14px var(--body); cursor: pointer; }
+.choice button[aria-pressed="true"].a { background: var(--accent); color: var(--on-accent); }
+.choice button[aria-pressed="true"].c { background: var(--em-bg); color: var(--em-fg); }
+.dec label { grid-column: 1 / -1; display: grid; gap: 6px; font-size: .875rem; color: var(--text-2); }
+.dec textarea { width: 100%; min-height: 72px; resize: vertical; background: var(--raised); color: var(--text); border: 1px solid var(--edge); border-radius: 10px; padding: 10px 12px; font: 15px/1.45 var(--body); }
+.summary { position: sticky; bottom: 0; margin-top: 14px; background: var(--sidebar); border: 1px solid var(--edge); border-radius: 16px; padding: 14px 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
+.summary .gap { flex: 1; }
+.summary .count { font-family: var(--display); font-size: 1.05rem; }
+.summary .btn { min-height: 44px; font-size: 14px; padding: 0 18px; }
+#copyMsg { color: var(--accent); font-size: .875rem; }
+#replyText { width: 100%; min-height: 120px; background: var(--raised); color: var(--text); border: 1px solid var(--edge); border-radius: 10px; padding: 10px; font: 13px/1.5 var(--mono); }
+.skills { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+.skills .card { padding: 14px; gap: 6px; }
+.skills .card p { color: var(--text-2); font-size: .875rem; }
+.ok-tag { color: var(--nw-fg); font-size: .8125rem; font-weight: 600; }
+
+@media (max-width: 760px) {
+  .dec { grid-template-columns: 1fr; }
+  .choice { grid-row: auto; grid-column: 1; justify-self: start; }
+  .kpis { flex-wrap: wrap; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="logo" viewBox="0 0 32 32"><rect width="32" height="32" rx="9" fill="#C8F53C"/><path d="M11.5 8.5c-1 0-2.5 1.2-2.5 2.6 0 6 5.9 11.9 11.9 11.9 1.4 0 2.6-1.5 2.6-2.5 0-.6-.3-1-.8-1.3l-2.6-1.4c-.6-.3-1.3-.2-1.7.3l-.9 1c-1.9-.9-3.7-2.7-4.6-4.6l1-.9c.5-.4.6-1.1.3-1.7l-1.4-2.6c-.3-.5-.7-.8-1.3-.8z" fill="#0B0D10"/><path d="M19 8.5a4.5 4.5 0 0 1 4.5 4.5M19 11.5a1.5 1.5 0 0 1 1.5 1.5" stroke="#0B0D10" stroke-width="1.8" stroke-linecap="round" fill="none"/></symbol>
+  <symbol id="i-inbox" viewBox="0 0 24 24"><path d="M22 12h-6l-2 3h-4l-2-3H2M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="1.75"/><path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v18h18M18 17V9M13 17V5M8 17v-3" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.75"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" fill="none" stroke="currentColor" stroke-width="1.5"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="m21.7 18-8-14a2 2 0 0 0-3.4 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3zM12 9v4M12 17h.01" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4zM22 2 11 13" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-sim" viewBox="0 0 24 24"><path d="M15 2v6h6M22 2l-7 7" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/></symbol>
+</svg>
+
+<div class="wrap">
+  <div class="top">
+    <span class="mark"><svg aria-hidden="true"><use href="#logo"/></svg>Ringback</span>
+    <span class="status" role="status"><i></i>Awaiting your approval</span>
+  </div>
+
+  <div class="hero-intro">
+    <h1>Design review for the Ringback web demo</h1>
+    <p class="lede">These are static mockups of the five routes, built with the brief's exact tokens, plus the build plan and eight decisions that need your answer before any code goes into <code>web/</code>. Mark each decision Approve or Change, then copy your reply at the bottom.</p>
+    <div class="facts">
+      <span class="fact"><b>Folder</b> web/ (api/ and mobile/ later)</span>
+      <span class="fact"><b>Stack</b> Next.js, TypeScript, Tailwind v4, Zustand</span>
+      <span class="fact"><b>Data</b> mock only, saved in the browser</span>
+      <span class="fact"><b>Demo clock</b> Wednesday 11:00 AM</span>
+    </div>
+  </div>
+
+  <!-- SCREENS -->
+  <section aria-labelledby="s-screens">
+    <div class="sec-head">
+      <h2 id="s-screens">Screens</h2>
+      <p>Figures in the app mockups come from the proposed mock data: 9 missed calls this week, 5 leads, 2 booked, Priya's job marked won. On phones the desktop mockups scroll sideways inside their frames.</p>
+    </div>
+
+    <!-- landing -->
+    <div class="frame">
+      <div class="frame-bar"><b>/ — landing hero, 1440px</b><span>Hero phone plays the conversation; press Replay</span></div>
+      <div class="scroller"><div class="canvas land">
+        <div class="lnav">
+          <span class="mark"><svg aria-hidden="true"><use href="#logo"/></svg>Ringback</span>
+          <span>How it works</span><span>Pricing</span><span>FAQ</span>
+          <span class="btn primary">Start free trial</span>
+        </div>
+        <div class="lhero">
+          <div>
+            <h2>Every missed call gets a text back in seconds.</h2>
+            <p class="aud">For plumbing and HVAC shops with 1 to 5 trucks.</p>
+            <div class="ctas"><span class="btn primary">Start free trial</span><span class="btn">See how it works</span></div>
+            <p class="small">Try it: call [YOUR DEMO NUMBER] and hang up.</p>
+          </div>
+          <div class="demo-phone" aria-label="Phone mockup of a text conversation">
+            <div class="who"><b>Mike's Plumbing</b>Text message</div>
+            <div class="dp-msgs" id="dpMsgs" aria-live="polite"></div>
+            <button class="btn replay" id="replay" type="button"><svg aria-hidden="true"><use href="#i-play"/></svg>Replay</button>
+          </div>
+        </div>
+      </div></div>
+      <div class="notes"><ul>
+        <li>The hero phone is the page's one animated moment. Under reduced motion it shows the finished conversation.</li>
+        <li>No testimonials, logos or invented statistics. Missing facts use bracketed placeholders.</li>
+      </ul><ul>
+        <li>Sections follow the brief's order: problem, how it works, calculator, pricing, FAQ, closing call to action, footer.</li>
+        <li>"Start free trial" goes to /app/leads.</li>
+      </ul></div>
+    </div>
+
+    <!-- leads desktop -->
+    <div class="frame">
+      <div class="frame-bar"><b>/app/leads — 1440px, owner has taken over Luis's thread</b><span>Three panes</span></div>
+      <div class="scroller"><div class="canvas app">
+        <nav class="side" aria-label="Mock app navigation">
+          <span class="mark"><svg aria-hidden="true"><use href="#logo"/></svg>Ringback</span>
+          <span class="nav on"><svg aria-hidden="true"><use href="#i-inbox"/></svg>Leads<span class="count">2</span></span>
+          <span class="nav"><svg aria-hidden="true"><use href="#i-cal"/></svg>Calendar</span>
+          <span class="nav"><svg aria-hidden="true"><use href="#i-chart"/></svg>Report</span>
+          <span class="nav"><svg aria-hidden="true"><use href="#i-gear"/></svg>Settings</span>
+          <div class="fwd"><b><i></i>Forwarding is on</b><span>Missed calls to (555) 010-0100 get a text back.</span></div>
+        </nav>
+        <div class="main">
+          <div class="apphead">
+            <h3>Leads</h3><span class="demo">Demo data</span>
+            <div class="stats">
+              <div class="stat"><span>Missed calls</span><b>9</b></div>
+              <div class="stat"><span>Leads captured</span><b>5</b></div>
+              <div class="stat"><span>Jobs booked</span><b>2</b></div>
+              <div class="stat"><span>Recovered</span><b>$480</b></div>
+            </div>
+            <span class="btn primary"><svg aria-hidden="true"><use href="#i-sim"/></svg>Simulate a missed call</span>
+          </div>
+          <div class="inbox">
+            <div class="list">
+              <div class="tabs"><span class="tab on">All</span><span class="tab">New</span><span class="tab">Booked</span><span class="tab">Emergency</span></div>
+              <div class="row"><div class="r1"><b>Priya Nair</b><span class="pill p-em"><svg width="10" height="10" aria-hidden="true"><use href="#i-alert"/></svg>Emergency</span></div><p>Burst pipe in the basement. Owner was called.</p></div>
+              <div class="row on"><div class="r1"><b>Luis Ortega</b><span class="pill p-nw">New</span></div><p>No hot water, wants a call back</p></div>
+              <div class="row"><div class="r1"><b>Dana Whitfield</b><span class="pill p-bk">Booked</span></div><p>Water heater leaking. Thu 8–10 AM</p></div>
+              <div class="row"><div class="r1"><b>Tom Becker</b><span class="pill p-bk">Booked</span></div><p>Clogged kitchen drain. Thu 1–3 PM</p></div>
+              <div class="row"><div class="r1"><b><i aria-label="Unread"></i>(555) 010-0105</b><span class="pill p-vm">Voicemail</span></div><p>"Loud banging when the heat comes on…"</p></div>
+            </div>
+            <div class="thread">
+              <div class="thead"><b>Luis Ortega</b><span class="muted">(555) 010-0103</span><span class="grow"></span><span class="btn">Hand back to assistant</span></div>
+              <div class="msgs">
+                <div class="msg out"><small>Assistant</small><div>Hi, this is the automated assistant for Mike's Plumbing. Sorry we missed your call. What can we help with?</div></div>
+                <div class="msg in"><small>Luis</small><div>No hot water since this morning. Gas heater, I think the pilot is out.</div></div>
+                <div class="msg out"><small>Assistant</small><div>Thanks, Luis. Do you smell gas near the heater?</div></div>
+                <div class="msg in"><small>Luis</small><div>No smell. Just no hot water. 88 Birch Ave. Can someone call me? I'd rather talk to a person.</div></div>
+                <div class="msg out"><small>Assistant</small><div>Of course. I've passed this to Mike, who will call you back. The call-out fee is $89.</div></div>
+                <span class="paused">Assistant paused. You're replying.</span>
+              </div>
+              <div class="compose">
+                <div class="chips"><span class="chip">Calling you shortly</span><span class="chip">Offer a slot</span><span class="chip">Send a photo</span></div>
+                <div class="box"><div>Hi Luis, this is Mike. I can come Thursday 10 AM–12 PM. Does that work?</div><span class="btn primary"><svg aria-hidden="true"><use href="#i-send"/></svg>Send</span></div>
+              </div>
+            </div>
+            <div class="details">
+              <div class="dl"><span>Problem</span>No hot water, gas heater, pilot may be out</div>
+              <div class="dl"><span>Address</span>88 Birch Ave</div>
+              <div class="dl"><span>Urgency</span>Today, not an emergency</div>
+              <div class="dl"><span>Appointment</span>None yet</div>
+              <div class="dl"><span>Source</span>Missed call, Wed 9:42 AM</div>
+              <div class="actions"><span class="btn primary"><svg aria-hidden="true"><use href="#i-phone"/></svg>Call back</span><span class="btn"><svg aria-hidden="true"><use href="#i-check"/></svg>Mark job won</span></div>
+            </div>
+          </div>
+        </div>
+      </div></div>
+      <div class="notes"><ul>
+        <li>Caller messages sit on the left; assistant and owner on the right, each labelled. Owner messages use the solid accent so a viewer sees who took over.</li>
+        <li>The quick reply "Offer a slot" filled the box, replacing [name] and [slot] from the lead and the next open slot.</li>
+      </ul><ul>
+        <li>The badge counts unopened New, Voicemail and Emergency leads (decision 5).</li>
+        <li>Every status pill carries a word, so status is never shown by colour alone.</li>
+      </ul></div>
+    </div>
+
+    <!-- leads mobile -->
+    <div class="frame">
+      <div class="frame-bar"><b>/app/leads — 390px</b><span>List, then conversation, then details</span></div>
+      <div class="phones">
+        <div>
+          <div class="phone">
+            <div class="ph-head"><h3>Leads</h3><span class="demo">Demo data</span><span style="flex:1"></span><span class="btn primary" style="min-height:32px;padding:0 10px">Simulate</span></div>
+            <div class="ph-body">
+              <div class="tabs"><span class="tab on">All</span><span class="tab">New</span><span class="tab">Booked</span><span class="tab">Emerg.</span></div>
+              <div class="row"><div class="r1"><b>Priya Nair</b><span class="pill p-em">Emergency</span></div><p>Burst pipe in the basement</p></div>
+              <div class="row"><div class="r1"><b>Luis Ortega</b><span class="pill p-nw">New</span></div><p>No hot water, wants a call back</p></div>
+              <div class="row"><div class="r1"><b>Dana Whitfield</b><span class="pill p-bk">Booked</span></div><p>Thu 8–10 AM</p></div>
+              <div class="row"><div class="r1"><b>Tom Becker</b><span class="pill p-bk">Booked</span></div><p>Thu 1–3 PM</p></div>
+              <div class="row"><div class="r1"><b>(555) 010-0105</b><span class="pill p-vm">Voicemail</span></div><p>Banging when the heat comes on</p></div>
+            </div>
+            <div class="tabbar"><span class="on"><svg aria-hidden="true"><use href="#i-inbox"/></svg>Leads<sup>2</sup></span><span><svg aria-hidden="true"><use href="#i-cal"/></svg>Calendar</span><span><svg aria-hidden="true"><use href="#i-chart"/></svg>Report</span><span><svg aria-hidden="true"><use href="#i-gear"/></svg>Settings</span></div>
+          </div>
+          <p class="phone-cap">1. Lead list</p>
+        </div>
+        <div>
+          <div class="phone">
+            <div class="ph-head"><span class="back"><svg aria-hidden="true"><use href="#i-back"/></svg></span><h3>Priya Nair</h3><span style="flex:1"></span><span class="btn" style="min-height:32px;padding:0 10px">Details</span></div>
+            <div class="ph-body">
+              <div class="em-banner"><svg aria-hidden="true"><use href="#i-alert"/></svg>Emergency. Ringback rang your mobile at 7:14 AM.</div>
+              <div class="msgs">
+                <div class="msg out"><small>Assistant</small><div>Hi, this is the automated assistant for Mike's Plumbing. Sorry we missed your call. What can we help with?</div></div>
+                <div class="msg in"><small>Priya</small><div>Pipe burst in the basement, water everywhere!! 15 Canal Rd</div></div>
+                <div class="msg out"><small>Assistant</small><div>If you can, shut off the main water valve now. I'm ringing Mike's mobile so he can call you right back.</div></div>
+              </div>
+            </div>
+            <div class="tabbar"><span class="on"><svg aria-hidden="true"><use href="#i-inbox"/></svg>Leads<sup>2</sup></span><span><svg aria-hidden="true"><use href="#i-cal"/></svg>Calendar</span><span><svg aria-hidden="true"><use href="#i-chart"/></svg>Report</span><span><svg aria-hidden="true"><use href="#i-gear"/></svg>Settings</span></div>
+          </div>
+          <p class="phone-cap">2. Conversation, with a back button</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- calendar -->
+    <div class="frame">
+      <div class="frame-bar"><b>/app/calendar — week of Mon 23 Nov</b><span>Today is Wednesday, 11:00 AM</span></div>
+      <div class="scroller"><div class="canvas cal">
+        <div class="cal-top"><h3>This week</h3><span class="demo">Demo data</span><span class="open-count"><b class="num">6</b> open slots the assistant can offer</span></div>
+        <div class="grid">
+          <span></span><span class="h"><b>Mon</b>23</span><span class="h"><b>Tue</b>24</span><span class="h today"><b>Wed</b>25, today</span><span class="h"><b>Thu</b>26</span><span class="h"><b>Fri</b>27</span>
+          <span class="h">8–10 AM</span><div class="slot s-past">Past</div><div class="slot s-past">Past</div><div class="slot s-past">Past</div><div class="slot s-ai"><b>Dana Whitfield</b><span>Water heater, booked by assistant</span></div><div class="slot s-open">Open</div>
+          <span class="h">10–12</span><div class="slot s-past">Past</div><div class="slot s-past">Past</div><div class="slot s-past">Past</div><div class="slot s-open">Open</div><div class="slot s-own"><b>Your booking</b><span>Boiler service, Hendricks</span></div>
+          <span class="h">1–3 PM</span><div class="slot s-past">Past</div><div class="slot s-past">Past</div><div class="slot s-open">Open</div><div class="slot s-ai"><b>Tom Becker</b><span>Kitchen drain, booked by assistant</span></div><div class="slot s-open">Open</div>
+          <span class="h">3–5 PM</span><div class="slot s-past">Past</div><div class="slot s-past">Past</div><div class="slot s-open">Open</div><div class="slot s-open">Open</div><div class="slot s-closed">Closed</div>
+        </div>
+        <div class="legend">
+          <span><i class="s-ai" style="border:1px solid #2E4A63"></i>Booked by assistant (opens the lead)</span>
+          <span><i class="s-own" style="border:1px solid var(--edge)"></i>Your own booking</span>
+          <span><i style="border:1px dashed var(--accent)"></i>Open: click to close</span>
+          <span><i class="s-closed"></i>Closed: click to open</span>
+          <span><i class="s-past"></i>Past</span>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- report -->
+    <div class="frame">
+      <div class="frame-bar"><b>/app/report — this week</b><span>The day chart toggle works here</span></div>
+      <div class="scroller"><div class="canvas rep">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h3>Weekly report</h3><div class="seg" role="group" aria-label="Week"><button type="button" aria-pressed="true">This week</button><button type="button" aria-pressed="false">Last week</button></div></div>
+          <div class="big">$480</div>
+          <p class="big-label">recovered from calls you missed</p>
+          <div class="kpis"><div class="stat"><span>Missed calls</span><b>9</b></div><div class="stat"><span>Leads captured</span><b>5</b></div><div class="stat"><span>Jobs booked</span><b>2</b></div></div>
+          <h3 style="font-size:14px;margin-top:6px">From missed call to won job</h3>
+          <div class="funnel" role="list" aria-label="Funnel: 9 missed, 8 texted back, 6 replied, 5 leads, 2 booked, 1 won">
+            <div class="fstep" role="listitem"><span>Missed calls</span><div class="track"><div class="bar" style="width:100%"></div></div><span class="v"><b>9</b></span></div>
+            <div class="fstep" role="listitem"><span>Texted back</span><div class="track"><div class="bar" style="width:88.9%"></div></div><span class="v"><b>8</b> 89%</span></div>
+            <div class="fstep" role="listitem"><span>Caller replied</span><div class="track"><div class="bar" style="width:66.7%"></div></div><span class="v"><b>6</b> 75%</span></div>
+            <div class="fstep" role="listitem"><span>Lead captured</span><div class="track"><div class="bar" style="width:55.6%"></div></div><span class="v"><b>5</b></span></div>
+            <div class="fstep" role="listitem"><span>Job booked</span><div class="track"><div class="bar" style="width:22.2%"></div></div><span class="v"><b>2</b> 40%</span></div>
+            <div class="fstep" role="listitem"><span>Marked won</span><div class="track"><div class="bar" style="width:11.1%"></div></div><span class="v"><b>1</b> 50%</span></div>
+          </div>
+          <p class="muted" style="font-size:11.5px">Lead captured includes the voicemail, which came in without a text reply, so no step rate is shown for it.</p>
+        </div>
+        <div style="display:grid;gap:14px;align-content:start">
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h3 id="dayTitle">Missed calls by day</h3><div class="seg" role="group" aria-label="Chart series"><button type="button" aria-pressed="true" data-series="calls">Calls</button><button type="button" aria-pressed="false" data-series="leads">Leads</button></div></div>
+            <div class="days" id="days" aria-describedby="dayTitle"></div>
+            <div class="daylabels"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span></div>
+          </div>
+          <div class="card">
+            <h3>Jobs marked won</h3>
+            <div class="won"><div><span>Priya Nair, burst pipe</span><span class="num">$480</span></div><div class="tot"><span>Total</span><span class="num">$480</span></div></div>
+          </div>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- settings -->
+    <div class="frame">
+      <div class="frame-bar"><b>/app/settings — assistant and caller preview</b><span>Shop details, quick replies and automatic replies sit above and below</span></div>
+      <div class="scroller"><div class="canvas set">
+        <div class="card">
+          <h3>What the assistant may do</h3>
+          <div>
+            <div class="sw">Text back missed calls<span class="toggle"></span></div>
+            <div class="sw">Book into the calendar<span class="toggle"></span></div>
+            <div class="sw">State the call-out fee when asked<span class="toggle"></span></div>
+            <div class="sw">Ring my mobile for emergencies<span class="toggle"></span></div>
+            <div class="sw">Nudge silent callers once<span class="toggle off"></span></div>
+          </div>
+        </div>
+        <div class="card">
+          <h3>What callers will read</h3>
+          <p class="muted" style="font-size:12px">First message</p>
+          <div class="preview">Hi, this is the automated assistant for Mike's Plumbing. Sorry we missed your call. What can we help with?</div>
+          <p class="muted" style="font-size:12px">When a caller asks about price</p>
+          <div class="preview">Our call-out fee is $89. The plumber gives you a price for the work once they've seen the problem.</div>
+          <p class="muted" style="font-size:12px">Updates as you edit the shop name, trade, fee and switches. Turning off the fee switch changes the second message to "The plumber will talk through pricing when they call you."</p>
+        </div>
+        <div class="savebar"><span class="dot"></span><span>2 unsaved changes</span><span class="gap"></span><span class="muted">Plan: Starter, $99 a month</span><span class="btn">Reset demo</span><span class="btn primary">Save changes</span></div>
+      </div></div>
+    </div>
+  </section>
+
+  <!-- TOKENS -->
+  <section aria-labelledby="s-tokens">
+    <div class="sec-head"><h2 id="s-tokens">Colour and type</h2><p>The tokens come straight from the brief. Contrast was measured, not estimated: every text pair passes 4.5:1. The line colour is too faint to mark the edge of a control, so inputs, switches and the reply box get a stronger edge colour (#4A5261, 3.1:1).</p></div>
+    <div class="swatches" id="swatches"></div>
+    <div class="typespec">
+      <div class="card"><span class="muted" style="font-size:13px">Space Grotesk, headings and numbers</span><div class="ts-big">$1,240 <span style="color:var(--muted)">/ 9 calls</span></div><p class="ts-body">Scale 12, 14, 16, 18, 24, 32, 48, 64. Figures that change use tabular numerals so they don't jump.</p></div>
+      <div class="card"><span class="muted" style="font-size:13px">Inter, body and controls</span><p style="font-size:18px;font-weight:500">Water heater leaking, 412 Alder St</p><p class="ts-body">Body 16px on phones, 14px allowed in the dense app panes, line height 1.5. Corners: 10px controls, 12px bubbles, 16px panels.</p></div>
+    </div>
+  </section>
+
+  <!-- PLAN -->
+  <section aria-labelledby="s-plan">
+    <div class="sec-head"><h2 id="s-plan">Build plan</h2><p>The same plan is in docs/web-plan.md. Type check, lint and build run after every step.</p></div>
+    <div class="plan">
+      <div class="card"><h3>Folder structure</h3><pre>web/
+  app/
+    layout.tsx         fonts, dot grid
+    page.tsx           landing
+    app/layout.tsx     sidebar / tab bar
+    app/leads/  calendar/  report/  settings/
+  components/
+    ui/  app/  leads/  calendar/
+    report/  settings/  landing/
+  lib/
+    mock/      shop, leads, calls, slots,
+               scenarios, lastWeek
+    store.ts   Zustand + persist
+    selectors.ts  totals, funnel, badge
+    dates.ts  types.ts</pre></div>
+      <div class="card"><h3>Store shape</h3><pre>shop          name, trade, fee, zips, hours
+permissions   textBack, book, statFee,
+              ringOwner, nudge
+quickReplies  { id, label, text }[]
+autoReplies   afterHours, outsideArea,
+              bookingConfirmed: { on, text }
+leads         Lead[] with messages[]
+calls         every missed call this week
+slots         5 days × 4 slots
+scenarioIndex next simulated call
+savedSettings for "unsaved changes"
+
+actions  takeOver, handBack, send,
+         markWon, toggleSlot, simulateCall,
+         saveSettings, resetDemo</pre></div>
+      <div class="card"><h3>Order of work</h3><ol class="steps">
+        <li><b>Store and mock data</b>, with a small self-check of the totals.</li>
+        <li><b>App layout</b>: sidebar, tab bar, forwarding card, demo label.</li>
+        <li><b>Leads</b>, then <b>Calendar</b>, <b>Report</b>, <b>Settings</b>.</li>
+        <li><b>Landing page.</b></li>
+        <li><b>Walkthrough</b> of the brief's checklist in a browser at 390, 768 and 1440px.</li>
+      </ol></div>
+    </div>
+  </section>
+
+  <!-- DECISIONS -->
+  <section aria-labelledby="s-dec">
+    <div class="sec-head"><h2 id="s-dec">Decisions to approve</h2><p>Each one shows the default I'll use. Choose Change to add a note. Your choices are kept in this browser only.</p></div>
+    <div class="decisions" id="decisions"></div>
+    <div class="summary">
+      <span class="count" id="count">0 of 8 answered</span>
+      <span id="copyMsg" role="status"></span>
+      <span class="gap"></span>
+      <button class="btn" type="button" id="approveAll">Approve the rest</button>
+      <button class="btn primary" type="button" id="copy">Copy my reply</button>
+      <textarea id="replyText" readonly hidden aria-label="Your reply"></textarea>
+    </div>
+  </section>
+
+  <!-- SKILLS -->
+  <section aria-labelledby="s-skills">
+    <div class="sec-head"><h2 id="s-skills">Skills used for this review</h2></div>
+    <div class="skills">
+      <div class="card"><span class="ok-tag">Installed and used</span><h3>ui-ux-pro-max</h3><p>Generated a design system, checked charts and the mobile inbox pattern. Its suggested palette (light, glassy, blue) conflicted with the brief and was not used. Its accessibility, touch, motion and chart rules were applied.</p></div>
+      <div class="card"><span class="ok-tag">Used</span><h3>frontend-design</h3><p>Kept one animated moment per view (the hero phone and the live simulated call) and kept decoration off the app screens.</p></div>
+      <div class="card"><span class="ok-tag">Used</span><h3>dataviz</h3><p>Funnel and day chart: single hue, no legend for one series, direct value labels, upcoming days marked instead of drawn as zero.</p></div>
+    </div>
+  </section>
+</div>
+
+<script>
+(function () {
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Hero phone conversation
+  var convo = [
+    ['out', 'Assistant', "Hi, this is the automated assistant for Mike's Plumbing. Sorry we missed your call. What can we help with?"],
+    ['in', 'Dana', 'Water heater in the garage is leaking from the bottom.'],
+    ['out', 'Assistant', "Sorry to hear that. What's the address? The call-out fee is $89."],
+    ['in', 'Dana', '412 Alder St'],
+    ['out', 'Assistant', 'I can book Thursday 8–10 AM or 3–5 PM. Which works?'],
+    ['in', 'Dana', '8–10 please']
+  ];
+  var box = document.getElementById('dpMsgs');
+  var timers = [];
+  function bubble(m) {
+    var d = document.createElement('div');
+    d.className = 'msg ' + m[0] + ' pop';
+    d.innerHTML = '<small></small><div></div>';
+    d.children[0].textContent = m[1];
+    d.children[1].textContent = m[2];
+    return d;
+  }
+  function bookedCard() {
+    var c = document.createElement('div');
+    c.className = 'booked-card pop';
+    c.innerHTML = '<b><svg aria-hidden="true"><use href="#i-check"/></svg>New job booked</b>Dana Whitfield, water heater leak<br>Thursday 8–10 AM, 412 Alder St';
+    return c;
+  }
+  function showAll() {
+    box.innerHTML = '';
+    convo.slice(2).forEach(function (m) { var b = bubble(m); b.classList.remove('pop'); box.appendChild(b); });
+    var c = bookedCard(); c.classList.remove('pop'); box.appendChild(c);
+  }
+  function play() {
+    timers.forEach(clearTimeout); timers = [];
+    if (reduce) { showAll(); return; }
+    box.innerHTML = '';
+    var t = 200;
+    convo.forEach(function (m) {
+      if (m[0] === 'out') {
+        timers.push(setTimeout(function () {
+          var ty = document.createElement('div'); ty.className = 'msg out'; ty.id = 'typing';
+          ty.innerHTML = '<small>Assistant</small><div class="typing"><i></i><i></i><i></i></div>';
+          box.appendChild(ty);
+        }, t));
+        t += 900;
+      }
+      timers.push(setTimeout(function () {
+        var ty = document.getElementById('typing'); if (ty) ty.remove();
+        box.appendChild(bubble(m));
+      }, t));
+      t += m[0] === 'in' ? 1100 : 700;
+    });
+    timers.push(setTimeout(function () { box.appendChild(bookedCard()); }, t + 300));
+  }
+  showAll();
+  document.getElementById('replay').addEventListener('click', play);
+
+  // Day chart
+  var data = { calls: [4, 3, 2, null, null], leads: [2, 2, 1, null, null] };
+  var titles = { calls: 'Missed calls by day', leads: 'Leads captured by day' };
+  var days = document.getElementById('days');
+  function drawDays(key) {
+    var vals = data[key], max = 4;
+    days.innerHTML = '';
+    vals.forEach(function (v, i) {
+      var d = document.createElement('div'); d.className = 'day';
+      var name = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'][i];
+      if (v === null) { d.innerHTML = '<span class="up">Upcoming</span>'; d.setAttribute('aria-label', name + ': upcoming'); }
+      else {
+        d.innerHTML = '<span class="val"></span><span class="col"></span>';
+        d.children[0].textContent = v;
+        d.children[1].style.height = (v / max * 110) + 'px';
+        d.setAttribute('aria-label', name + ': ' + v);
+      }
+      days.appendChild(d);
+    });
+    document.getElementById('dayTitle').textContent = titles[key];
+  }
+  drawDays('calls');
+  document.querySelectorAll('[data-series]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      document.querySelectorAll('[data-series]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+      drawDays(b.dataset.series);
+    });
+  });
+
+  // Swatches
+  var sw = [
+    ['ground', '#0B0D10', '#F2F4F7', 'text on it 17.7:1'],
+    ['sidebar', '#0F1216', '#F2F4F7', 'Sidebar, tab bar'],
+    ['surface', '#13161B', '#9AA3B2', 'muted text 7.1:1'],
+    ['raised', '#1A1E25', '#9AA3B2', 'muted text 6.6:1'],
+    ['line', '#272C35', '#F2F4F7', '1.3:1, dividers only'],
+    ['edge (added)', '#4A5261', '#F2F4F7', 'Control edges 3.1:1'],
+    ['accent', '#C8F53C', '#0B0D10', 'ground text 15.4:1'],
+    ['emergency', '#3A1D10', '#FFA070', '7.7:1'],
+    ['booked', '#12283A', '#8CCBFF', '8.7:1'],
+    ['new', '#2A3312', '#C8F53C', '10.5:1'],
+    ['voicemail', '#22262E', '#C3CAD6', '9.2:1'],
+    ['text-2', '#13161B', '#C3CAD6', 'on surface 11.0:1']
+  ];
+  var swBox = document.getElementById('swatches');
+  sw.forEach(function (s) {
+    var c = document.createElement('div'); c.className = 'sw-card';
+    c.innerHTML = '<div class="sw-chip">Aa</div><div class="sw-meta"><b></b><code></code><span class="ratio"></span></div>';
+    c.children[0].style.background = s[1]; c.children[0].style.color = s[2];
+    c.querySelector('b').textContent = s[0];
+    c.querySelector('code').textContent = s[2] + ' on ' + s[1];
+    c.querySelector('.ratio').textContent = s[3];
+    swBox.appendChild(c);
+  });
+
+  // Decisions
+  var decs = [
+    ['Demo clock', '"Today" is always Wednesday 11:00 AM of the current week, so the calendar has past and future slots whatever day you open it. Dana\'s "tomorrow 8–10" and Tom\'s "Thursday 1–3" both land on Thursday.', 'Alternative: use the real date and time.'],
+    ['Revenue recovered', 'Count only jobs marked won. Priya\'s emergency starts as won at $480, so the header and report aren\'t empty in a demo.', 'Alternative: start at $0 and let the viewer mark jobs won.'],
+    ['Funnel data', 'Seed 9 missed calls this week: 8 texted back (the landline can\'t receive texts), 6 replied, 5 leads (4 by text plus the voicemail), 2 booked, 1 won.', 'Alternative: only the 5 leads, so the funnel stays flat until the last steps.'],
+    ['Voicemail lead', 'Show a transcript card instead of a text thread. Take over is turned off; Call back is the main action.', 'Alternative: pretend the landline can text.'],
+    ['Leads badge', 'Count leads that are New, Voicemail or Emergency and not yet opened. Opening a lead clears it from the count.', 'Alternative: count every New lead whether opened or not.'],
+    ['Opening hours', 'Weekday open and close times, plus a Saturday on/off switch.', 'Alternative: a separate schedule for each day.'],
+    ['Stack', 'Latest Next.js, Tailwind v4 (tokens in @theme), Zustand with localStorage, lucide-react, CSS animation only.', 'Alternative: Framer Motion, or React context instead of Zustand.'],
+    ['Repository layout', 'web/ stands alone with its own package.json. api/ and mobile/ go beside it later, with no workspace tooling until they share code.', 'Alternative: set up an npm or pnpm workspace now.']
+  ];
+  var KEY = 'ringback-review-v1';
+  var state = {};
+  try { state = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { state = {}; }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+  var list = document.getElementById('decisions');
+  decs.forEach(function (d, i) {
+    var el = document.createElement('article'); el.className = 'dec';
+    el.innerHTML = '<h3><span></span><b></b></h3><div class="choice" role="group"><button type="button" class="a" aria-pressed="false">Approve</button><button type="button" class="c" aria-pressed="false">Change</button></div><p></p><p class="alt"></p><label hidden>What should change?<textarea></textarea></label>';
+    el.querySelector('h3 span').textContent = i + 1;
+    el.querySelector('h3 b').textContent = d[0];
+    el.querySelector('.choice').setAttribute('aria-label', 'Decision ' + (i + 1) + ': ' + d[0]);
+    var ps = el.querySelectorAll('p'); ps[0].textContent = d[1]; ps[1].textContent = d[2];
+    var ta = el.querySelector('textarea'); ta.id = 'note-' + i;
+    var lab = el.querySelector('label'); lab.setAttribute('for', ta.id);
+    var a = el.querySelector('.a'), c = el.querySelector('.c');
+    function render() {
+      var s = state[i] || {};
+      a.setAttribute('aria-pressed', String(s.v === 'ok'));
+      c.setAttribute('aria-pressed', String(s.v === 'chg'));
+      el.classList.toggle('ok', s.v === 'ok'); el.classList.toggle('chg', s.v === 'chg');
+      lab.hidden = s.v !== 'chg';
+      if (ta.value !== (s.note || '')) ta.value = s.note || '';
+      updateCount();
+    }
+    a.addEventListener('click', function () { state[i] = { v: 'ok' }; save(); render(); });
+    c.addEventListener('click', function () { state[i] = { v: 'chg', note: (state[i] || {}).note || '' }; save(); render(); ta.focus(); });
+    ta.addEventListener('input', function () { state[i] = { v: 'chg', note: ta.value }; save(); });
+    el._render = render;
+    list.appendChild(el);
+  });
+  function updateCount() {
+    var n = 0; for (var k = 0; k < decs.length; k++) if (state[k] && state[k].v) n++;
+    document.getElementById('count').textContent = n + ' of ' + decs.length + ' answered';
+  }
+  Array.prototype.forEach.call(list.children, function (el) { el._render(); });
+
+  document.getElementById('approveAll').addEventListener('click', function () {
+    decs.forEach(function (_, i) { if (!state[i] || !state[i].v) state[i] = { v: 'ok' }; });
+    save(); Array.prototype.forEach.call(list.children, function (el) { el._render(); });
+  });
+
+  function replyText() {
+    var lines = ['Ringback design review:'];
+    decs.forEach(function (d, i) {
+      var s = state[i] || {};
+      var v = s.v === 'ok' ? 'approved' : s.v === 'chg' ? 'change: ' + (s.note || '(no note)') : 'not answered';
+      lines.push((i + 1) + '. ' + d[0] + ': ' + v);
+    });
+    return lines.join('\n');
+  }
+  var msg = document.getElementById('copyMsg'), out = document.getElementById('replyText');
+  document.getElementById('copy').addEventListener('click', function () {
+    var t = replyText();
+    function fallback() { out.hidden = false; out.value = t; out.focus(); out.select(); msg.textContent = 'Select all and copy the text below.'; }
+    try {
+      navigator.clipboard.writeText(t).then(function () { msg.textContent = 'Copied. Paste it into Claude Code.'; out.hidden = true; }, fallback);
+    } catch (e) { fallback(); }
+  });
+})();
+</script>
